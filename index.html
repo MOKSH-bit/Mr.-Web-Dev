@@ -921,13 +921,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
         <h2>Ready to become a brand?</h2>
         <p class="lede">Tell us about your project and what you're looking for — we'll get back to you within 1–2 business days.</p>
         <div class="contact-list">
-          <span>mokshdesktop@gmail.com</span>
-          <span>7703920314</span>
+          <span>Reach us out at:</span>          
+          <span>■ mokshdesktop@gmail.com</span>
+          <span>■ 7703920314</span>          
           <span>Response within 1–2 business days</span>
         </div>
       </div>
 
-      <form action="https://formspree.io/f/myeyjwyj" method="POST" class="form-grid reveal" id="contactForm">
+      <form class="form-grid reveal" id="contactForm">
         <div class="form-row">
           <div class="field">
             <label for="name">Name</label>
@@ -953,7 +954,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
           <textarea id="message" name="message" placeholder="Tell us about your project — timeline, must-have features, links to work you like."></textarea>
         </div>
         <button type="submit" class="btn btn-primary btn-block">Send Project Brief →</button>
-        <p class="form-note">Opens your email client with this brief pre-filled — replace with your form handler of choice (e.g. Formspree, EmailJS) once deployed.</p>
+        <p class="form-note">Submits directly to your inbox via Formspree — see the setup note in the code comments (2-minute one-time setup).</p>
         <p class="form-status" id="formStatus" role="status"></p>
       </form>
     </div>
@@ -987,7 +988,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
    3. Scroll-reveal via IntersectionObserver
    4. What We Offer — card accordion (tap a card to expand it)
    5. Selected Work — guards placeholder links until real URLs are added
-   6. Contact form -> mailto submit
+   6. Contact form -> Formspree submission (data only, no mail client)
    ============================================================ */
 
 // ---- Logo hydration: the logo is embedded once (below) and reused
@@ -1055,26 +1056,43 @@ document.querySelectorAll('.work-card').forEach(card => {
   });
 });
 
-// ---- Contact form: mailto submit ----
-// NOTE: This is a dependency-free fallback for a static, single-file deploy.
-// For production, swap this handler for a real form service (Formspree, EmailJS,
-// a serverless function, etc.) — keep the same field IDs and it drops right in.
+// ---- Contact form: Formspree submission ----
+// This sends the form directly to your inbox — the visitor doesn't need
+// to do anything else. Two-step setup:
+//   1. Create a free form at https://formspree.io (sign up, "New Form",
+//      point it at the inbox you want notified — e.g. hello@mrwebdev.studio)
+//   2. Copy the endpoint it gives you (looks like
+//      https://formspree.io/f/abcdwxyz) and paste it below, replacing
+//      YOUR_FORM_ID. That's it — no other code changes needed.
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xeaqklag';
+
 const contactForm = document.getElementById('contactForm');
 const formStatus = document.getElementById('formStatus');
+const submitBtn = contactForm.querySelector('button[type="submit"]');
 
-contactForm.addEventListener('submit', (e) => {
+contactForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const projectType = document.getElementById('projectType').value;
-  const message = document.getElementById('message').value.trim();
+  submitBtn.disabled = true;
+  formStatus.textContent = 'Sending…';
 
-  const subject = `New project inquiry — ${projectType || 'General'} — ${name}`;
-  const body = `Name: ${name}\nEmail: ${email}\nProject type: ${projectType || 'Not specified'}\n\n${message}`;
-  const mailto = `mailto:hello@mrwebdev.studio?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  try {
+    const response = await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      body: new FormData(contactForm),
+      headers: { 'Accept': 'application/json' }
+    });
 
-  window.location.href = mailto;
-  formStatus.textContent = 'Opening your email client to send this brief…';
+    if (response.ok) {
+      formStatus.textContent = "Thanks — we've got it. We'll reply within 1–2 business days.";
+      contactForm.reset();
+    } else {
+      throw new Error('Form service returned an error');
+    }
+  } catch (err) {
+    formStatus.textContent = "Something went wrong sending that — please try again in a moment.";
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 </script>
 
